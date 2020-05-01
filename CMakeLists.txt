@@ -18,8 +18,8 @@ file(GLOB AEW_SOURCE_FILES src/*.c)
 file(GLOB AEW_HEADER_FILES src/*.h)
 
 find_package(CURL REQUIRED)
-include_directories(${CURL_INCLUDE_DIR})
 
 add_executable(aew ${AEW_SOURCE_FILES} ${AEW_HEADER_FILES})
 
+target_include_directories(aew PRIVATE ${CURL_INCLUDE_DIR})
 target_link_libraries(aew ${CURL_LIBRARIES})
