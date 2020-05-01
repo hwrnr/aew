@@ -12,6 +12,8 @@ set(CMAKE_C_FLAGS "-Wall -Wextra")
 set(CMAKE_C_FLAGS_DEBUG "-g")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
 
+option(BUILD_SHARED_LIBS SHARED)
+
 file(GLOB AEW_SOURCE_FILES src/*.c)
 file(GLOB AEW_HEADER_FILES src/*.h)
 
