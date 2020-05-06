@@ -1,0 +1,12 @@
+#! /bin/bash
+
+if [[ -z $1 ]]; then
+  echo "Give PKGBUILD file as argument to this command"
+  echo "Like this: $0 PKGBUILD"
+  exit 1
+fi
+
+source $1 #semi safe
+echo "${depends[@]}" | tr ' ' '\n'
+echo "##########"
+printf '%s\n' "${optdepends[@]}" | sed 's/:.*//g'
