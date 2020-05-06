@@ -1,47 +1,60 @@
-import sqlite3
+#!/usr/bin/env python3
+"""Generate database of arch dependencies on other distributions."""
+import fileinput
 import sys
-import subprocess
-import time
+import sqlite3
+import re
 
-TABLE_QUERY = "CREATE TABLE IF NOT EXISTS packages ({})"
-ADD_ARCH_QUERY = "INSERT INTO PACKAGES (arch) VALUES (?)"
-UPDATE_QUERY = "UPDATE packages SET {}=? WHERE arch=?"
+# SQLite3 queries
+ADD_TABLE_QUERY = 'CREATE TABLE IF NOT EXISTS packages (arch varchar(24));'
+ADD_ARCH_QUERY = 'INSERT INTO PACKAGES (arch) VALUES (?);'
+ADD_COLUMN_QUERY = 'ALTER TABLE packages ADD COLUMN ? varchar(24);'
+GET_PACKAGES_QUERY = 'SELECT arch FROM packages;'
+UPDATE_QUERY = 'UPDATE packages SET ?=? WHERE arch=?'
 
-distro = sys.argv[1]
-distros = {
-    "arch": ["/usr/bin/pacman", "-Qq"],
-    "gentoo": ["/bin/cat", "/tmp/gentoo"], 
-    "redhat": ["/usr/bin/yum", "list", "all"], # Don't use this, not tested
-    "alpine": ["/usr/bin/apk", "search"], # Don't use this, not tested
-    "debian": ["/usr/bin/apt", "list"] # Don't use this, not tested
-}
 
-if not distro in distros.keys():
+# Get packages and distro variables
+if len(sys.argv) == 3:
+    with open(sys.argv[2], 'r') as file:
+        packages = file.read().splitlines()
+        distro = sys.argv[1]
+
+elif len(sys.argv) == 2:
+    packages = list(fileinput.input(files='-'))
+    distro = sys.argv[1]
+else:
     sys.exit(1)
 
 
-distro_rows = [dis+" varchar(32)" for dis in distros.keys()]
+packages = [package.replace('\n', '') for package in packages]
 
-connection = sqlite3.connect("packages.db")
+
+# Instantiate database
+connection = sqlite3.connect('packages.db')
 cursor = connection.cursor()
-cursor.execute(TABLE_QUERY.format(distro_rows))
 
-process = subprocess.Popen(distros[distro], stdout=subprocess.PIPE)
-if distro=="redhat":
-    packages = process.stdout.read().decode("utf-8").splitlines()
-    packages = [i.split(".")[0] for i in packages]
+# Create database if doesn't exist
+cursor.execute(ADD_TABLE_QUERY)
 
-cursor.execute("SELECT arch FROM packages")
-arch_packages = cursor.fetchall()
-
-if distro == "arch":
+# Arch packages
+if distro == 'arch':
     for package in packages:
         cursor.execute(ADD_ARCH_QUERY, (package, ))
 else:
-    for arch_package in arch_packages:
+    cursor.execute(ADD_COLUMN_QUERY, (distro, ))
+    cursor.execute(GET_PACKAGES_QUERY)
+    for package in cursor.fetchall():
         for host_package in packages:
-            if arch_package[0] in host_package:
-                cursor.execute(UPDATE_QUERY.format(distro), (host_package, arch_package[0]))
+            if host_package in package:
+                cursor.execute(UPDATE_QUERY, (distro, host_package, package))
+        else:
+            keywords = re.split('_|-', package)
+            for keyword in keywords:
+                if keyword in package:
+                    cursor.execute(
+                        UPDATE_QUERY, (distro, host_package, package))
 
+
+# Save and exit the session
 connection.commit()
 connection.close()
