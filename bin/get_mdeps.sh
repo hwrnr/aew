@@ -7,6 +7,4 @@ if [[ -z $1 ]]; then
 fi
 
 source $1 #semi safe
-printf '%s\n' "${depends[@]}"
-echo "##########"
-printf '%s\n' "${optdepends[@]}" | sed 's/:.*//g'
+printf '%s\n' "${makedepends[@]}"
