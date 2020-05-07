@@ -14,7 +14,7 @@ connection = sqlite3.connect(base)
 cursor = connection.cursor()
 
 for i in deps:
-	cursor.execute("SELECT {} FROM packages WHERE arch=?".format(distro), deps)
+	cursor.execute("SELECT {} FROM packages WHERE arch=?".format(distro), (i,))
 	print(cursor.fetchone()[0])
 
 connection.close()

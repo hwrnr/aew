@@ -3,7 +3,8 @@
 import fileinput
 import sys
 import sqlite3
-import re
+from difflib import SequenceMatcher
+from tqdm import tqdm
 
 # SQLite3 queries
 ADD_TABLE_QUERY = 'CREATE TABLE IF NOT EXISTS packages (arch varchar(24));'
@@ -42,25 +43,16 @@ else:
     cursor.execute(ADD_COLUMN_QUERY.format(distro))
     cursor.execute(GET_PACKAGES_QUERY)
 
-    for raw_package in cursor.fetchall():
-        package = raw_package[0]
-        keywords = re.split('-|_', package)
-        alternative = None
+    for raw_package in tqdm(cursor.fetchall()):
+        arch_package = raw_package[0]
+        for raw_host_pkg in packages:
+            if '/' in raw_host_pkg:
+                host_package = raw_host_pkg.split('/')[1]
 
-        for host_package in packages:
-
-            if package in host_package or host_package in package:
+            if host_package == arch_package:
                 cursor.execute(UPDATE_QUERY.format(distro),
-                               (host_package, package))
-                packages.pop(packages.index(host_package))
+                               (raw_host_pkg, arch_package))
                 break
-            for keyword in keywords:
-                if keyword in host_package:
-                    alternative = host_package
-        else:
-            cursor.execute(UPDATE_QUERY.format(distro),
-                           (alternative, package))
-            packages.pop(packages.index(host_package))
 
 
 # Save and exit the session

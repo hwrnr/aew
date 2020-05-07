@@ -8,5 +8,5 @@ fi
 
 source $1 #semi safe
 printf '%s\n' "${depends[@]}"
-echo "##########"
+printf '%s\n' "${makedepends[@]}"
 printf '%s\n' "${optdepends[@]}" | sed 's/:.*//g'
