@@ -2,7 +2,7 @@
 import sys
 import sqlite3
 
-if len(sys.argv)<3:
+if len(sys.argv) < 3:
     print(f"Usage: {sys.argv[0]} [DISTRO] [BASE] [DEPS...]")
     sys.exit(1)
 
@@ -14,7 +14,9 @@ connection = sqlite3.connect(base)
 cursor = connection.cursor()
 
 for i in deps:
-	cursor.execute("SELECT {} FROM packages WHERE arch=?".format(distro), (i,))
-	print(cursor.fetchone()[0])
+    cursor.execute("SELECT {} FROM packages WHERE arch=?".format(distro), (i,))
+    result = cursor.fetchone()
+    if result:
+        print(result[0])
 
 connection.close()
